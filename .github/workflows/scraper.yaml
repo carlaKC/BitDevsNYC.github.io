@@ -1,0 +1,38 @@
+name: Daily Scraper
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run at midnight every day
+  workflow_dispatch:    # Manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout This Repository
+        uses: actions/checkout@v2
+
+      - name: Fetch Scraper Repository
+        uses: actions/checkout@v2
+        with:
+          repository: pinheadmz/bitdevs-scraper
+          path: bitdevs-scraper 
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '17'
+
+      - name: Install Scraper
+        run: | 
+          cd bitdevs-scraper
+          npm install
+          current_date=$(date +"%Y-%m-%d")
+          ./scrape.js "$current_date" ../_posts/"$current_date"
+
+      - name: Determine Branch Name
+        id: branch_name
+        run: |
+          branch_name=$(date +"%Y-%m")
+          echo "::set-output name=branch::$branch_name"
