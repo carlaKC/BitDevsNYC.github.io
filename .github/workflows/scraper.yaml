@@ -17,7 +17,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: pinheadmz/bitdevs-scraper
-          path: scraper  # Specify the directory where the repository will be fetched
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
@@ -36,7 +35,7 @@ jobs:
 
       - name: Run Scraper
         run: |
-          cd scraper  # Change directory to the one containing the scraper
+          cd bitdevs-scraper  # Change directory to the one containing the scraper
           current_date=$(date +"%Y-%m-%d")
           ./scrape.js "$current_date" _posts/"$current_date"
      
