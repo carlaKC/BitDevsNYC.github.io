@@ -1,0 +1,67 @@
+name: Daily Scraper
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run at midnight every day
+  workflow_dispatch:    # Manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout This Repository
+        uses: actions/checkout@v2
+
+      - name: Fetch Scraper Repository
+        uses: actions/checkout@v2
+        with:
+          repository: pinheadmz/bitdevs-scraper
+          path: scraper  # Specify the directory where the repository will be fetched
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: scraper  # Change directory to the one containing the scraper
+
+      - name: Determine Branch Name
+        id: branch_name
+        run: |
+          branch_name=$(date +"%Y-%m")
+          echo "::set-output name=branch::$branch_name"
+
+      - name: Create or Use Branch
+        run: |
+          cd scraper  # Change directory to the one containing the scraper
+          git checkout -B ${{ steps.branch_name.outputs.branch }}
+          git push --set-upstream origin ${{ steps.branch_name.outputs.branch }}
+
+      - name: Run Scraper
+        run: |
+          cd scraper  # Change directory to the one containing the scraper
+          current_date=$(date +"%Y-%m-%d")
+          ./scrape.js "$current_date" _posts/"$current_date"
+
+      - name: Check for Open Pull Request
+        id: pr_info
+        uses: octokit/request-action@v2.x
+        with:
+          route: GET /repos/:owner/:repo/pulls
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          params:
+            state: open
+            head: ${{ github.repository_owner }}:${{ steps.branch_name.outputs.branch }}
+
+      - name: Push to Pull Request Branch
+        if: steps.pr_info.outputs.data != ''
+        run: |
+          cd scraper  # Change directory to the one containing the scraper
+          git fetch origin ${{ steps.branch_name.outputs.branch }}
+          git checkout ${{ steps.branch_name.outputs.branch }}
+          git merge origin/${{ steps.branch_name.outputs.branch }}
+          git push origin ${{ steps.branch_name.outputs.branch }}
