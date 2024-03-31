@@ -29,7 +29,7 @@ jobs:
           cd bitdevs-scraper
           npm install
           current_date=$(date +"%Y-%m-%d")
-          ./scrape.js "$current_date" _posts/"$current_date"
+          ./scrape.js "$current_date" ../_posts/"$current_date"
 
       - name: Determine Branch Name
         id: branch_name
